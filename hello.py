@@ -4,10 +4,11 @@ from flask_moment import Moment
 from datetime import datetime
 from flask_wtf import Form
 from wtforms import StringField, SubmitField
-from wtforms.validators import Required
+from wtforms.validators import DataRequired, Email
 
 class NameForm(Form):
-    name = StringField('What is your name?', validators=[Required()]) 
+    name = StringField('What is your name?', validators=[DataRequired()]) 
+    email = StringField('What is your UofT Email address?', validators=[DataRequired(), Email()])
     submit = SubmitField('Submit')
 
 app = Flask(__name__)
@@ -21,11 +22,19 @@ def index():
     form = NameForm()
     if form.validate_on_submit():
         old_name = session.get('name')
+        old_email = session.get('email')
         if old_name is not None and old_name != form.name.data:
             flash('Looks like you have changed your name!')
+        if old_email is not None and old_email != form.email.data:
+            flash('Looks like you have changed your email!')
+        if form.email.data is not None:
+            session['message']='Your UofT email is '+form.name.data
+        if 'utoronto' not in form.email.data:
+            session['message']='Please use your UofT email'
         session['name']=form.name.data
+        session['email']=form.email.data
         return redirect(url_for('index'))
-    return render_template('index.html', form=form, name=session.get('name'))
+    return render_template('index.html', form=form, name=session.get('name'), email=session.get('email'), message=session.get('message'))
 
 @app.route('/user/<name>')
 def user(name):
